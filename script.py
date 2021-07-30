@@ -5,7 +5,7 @@ from data import *
 class City:
     def __init__(self, city_name):
         self.name           = city_name
-        self.df             = pd.DataFrame(columns=['Date', 'Total Confirmed', 'Total Recovered', 'Total Deceased', 'New Confirmed', 'New Recovered', 'New Deceased'])
+        self.df             = pd.DataFrame(columns=['Date', 'Confirmed', 'Recovered', 'Deceased'])
         self.temp_df        = pd.DataFrame(columns=['Date', 'State', 'District', 'Confirmed', 'Recovered', 'Deceased', 'Other', 'Tested'])
         self.flag           = 0
         self.confirmed      = 0
@@ -29,42 +29,18 @@ def clean_covid_data(city, row):
         if row['District'] == 'Bengaluru Rural':
             city.temp_df = row
         elif row['District'] == 'Bengaluru Urban':
-            if city.flag == 0:
-                city.flag       = 1
-                city.confirmed  = row['Confirmed'] + city.temp_df['Confirmed']
-                city.recovered  = row['Recovered'] + city.temp_df['Confirmed']
-                city.deceased   = row['Deceased'] + city.temp_df['Confirmed']
-            else:
-                new_row                     = {}
-                new_row['Date']             = row['Date']
-                new_row['Total Confirmed']  = row['Confirmed'] + city.temp_df['Confirmed']
-                new_row['Total Recovered']  = row['Recovered'] + city.temp_df['Confirmed']
-                new_row['Total Deceased']   = row['Deceased'] + city.temp_df['Confirmed']
-                new_row['New Recovered']    = new_row['Total Recovered'] - city.recovered
-                new_row['New Deceased']     = new_row['Total Deceased'] - city.deceased
-                new_row['New Confirmed']    = new_row['Total Confirmed'] - city.confirmed + new_row['New Recovered']
-                city.recovered              = new_row['Total Recovered']
-                city.deceased               = new_row['Total Deceased']
-                city.confirmed              = new_row['Total Confirmed']
-                city.df                     = city.df.append(pd.Series(new_row), ignore_index=True)
-
-    elif city.flag == 0:
-        city.flag       = 1
-        city.confirmed  = row['Confirmed']
-        city.recovered  = row['Recovered']
-        city.deceased   = row['Deceased']
+            new_row                     = {}
+            new_row['Date']             = row['Date']
+            new_row['Recovered']        = row['Recovered'] + city.temp_df['Confirmed']
+            new_row['Deceased']         = row['Deceased'] + city.temp_df['Confirmed']
+            new_row['Confirmed']        = row['Confirmed'] + city.temp_df['Confirmed']
+            city.df                     = city.df.append(pd.Series(new_row), ignore_index=True)
     else:
         new_row                     = {}
         new_row['Date']             = row['Date']
-        new_row['Total Confirmed']  = row['Confirmed']
-        new_row['Total Recovered']  = row['Recovered']
-        new_row['Total Deceased']   = row['Deceased']
-        new_row['New Recovered']    = row['Recovered'] - city.recovered
-        new_row['New Deceased']     = row['Deceased'] - city.deceased
-        new_row['New Confirmed']    = row['Confirmed'] - city.confirmed + new_row['New Recovered']
-        city.recovered              = row['Recovered']
-        city.deceased               = row['Deceased']
-        city.confirmed              = row['Confirmed']
+        new_row['Confirmed']        = row['Confirmed']
+        new_row['Recovered']        = row['Recovered']
+        new_row['Deceased']         = row['Deceased']
         city.df                     = city.df.append(pd.Series(new_row), ignore_index=True)
 
 df = pd.read_csv('./covid data/districts.csv')
@@ -124,9 +100,6 @@ def combine_pollution_covid(city_name):
     pollution_df = pollution_df.reset_index()
     dataframe = pd.concat([covid_df, pollution_df], axis=1)
     dataframe.drop('index', inplace=True, axis=1)
-    dataframe.drop('Total Confirmed', inplace=True, axis=1)
-    dataframe.drop('Total Recovered', inplace=True, axis=1)
-    dataframe.drop('Total Deceased', inplace=True, axis=1)
     dataframe.to_csv('./data/' + city_name + '.csv')
 
 combine_pollution_covid('bengaluru')
